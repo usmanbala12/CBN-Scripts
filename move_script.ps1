@@ -26,7 +26,7 @@ while ($xmlfiles[-1] -ne $null) {
     #rec description field
     $description = $currentXmlObject.FOLDER.SHEET.FIELD | Where-object TYPE  -eq 'REC_DESCRIPTION' | %{$_.innerText}
     
-    $description = $description.Split(" `n")
+    $description = $description.Split("`n")
 
     $description = $description -join "_"
 
