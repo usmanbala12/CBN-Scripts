@@ -23,6 +23,18 @@ while ($xmlfiles[-1] -ne $null) {
     #split the string using a regex pattern
     $classification = $classification -split '([A-Z]{3})\/([A-Z]{3})\/([123])\/([A-Z]{3})\/(\d*)\/(\d*)'
 
+    #rec description field
+    $description = $currentXmlObject.FOLDER.SHEET.FIELD | Where-object TYPE  -eq 'REC_DESCRIPTION' | %{$_.innerText}
+    
+    $description = $description.Split(" `n")
+
+    $description = $description -join "_"
+
+
+    $description = $description.Split(" ")
+
+    $description = $description -join "_"
+
     #save the second element of the array as folder name
     $foldername = $classification[1]
 
@@ -31,6 +43,9 @@ while ($xmlfiles[-1] -ne $null) {
 
     $pdffilename = $pdffilename[1] + '.pdf'
 
+    $newpdf = $description + '.pdf'
+
+    $newxml = $description + '.xml'
     #create destination folder if it does not exist 
     if(-not (Test-Path -Path $destinationFolder\$foldername))  {
         Write-Host 'Destination folder not available ------ creating folder'
@@ -39,11 +54,11 @@ while ($xmlfiles[-1] -ne $null) {
 
     #move xml file to destination folder
     Write-Host "Moving $currentXmlFile to $foldername ---------"
-    Move-Item -Path .\$soucreFolder\$currentXmlFile -Destination $destinationFolder\$foldername
+    Move-Item -Path .\$soucreFolder\$currentXmlFile -Destination $destinationFolder\$foldername\$newxml
 
     #move pdf file to destination folder
     Write-Host "Moving $pdffilename to $foldername ---------"
-    Move-Item -Path .\$soucreFolder\$pdffilename -Destination $destinationFolder\$foldername
+    Move-Item -Path .\$soucreFolder\$pdffilename -Destination $destinationFolder\$foldername\$newpdf
 
     #remove last element from array
     $xmlfiles.Remove($xmlfiles[-1])
