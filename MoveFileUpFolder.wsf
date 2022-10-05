@@ -1,0 +1,96 @@
+<job>
+    <script language="JScript">
+        // Aquaforest 2022
+        // Get in and out folders as named arguments
+        var InFolder = "";
+        var OutFolder = "";
+		var FolderType = "";
+        if(WScript.Arguments.Named.Exists("in")){
+            InFolder = WScript.Arguments.Named("in");
+        }
+        if(WScript.Arguments.Named.Exists("Out")){
+            OutFolder = WScript.Arguments.Named("Out");
+        }
+		if(WScript.Arguments.Named.Exists("type")){
+            FolderType = WScript.Arguments.Named("type");
+        }
+        // If there is an in and an out parameter
+        if(OutFolder!="" && InFolder!=""){
+			checkNoFilesInFolders(InFolder)
+            doMoveUp(InFolder, OutFolder)			
+            // Quit with value 0
+            WSH.Echo("Done");
+            WSH.Quit(0);
+        }
+        // Else there are one or more missing parameters
+        //so quit with error
+        else
+        {
+            WSH.Echo("Missing Named Parameter(s)");
+            WSH.Quit(1);
+        }
+		
+		function checkNoFilesInFolders(input)		
+		{
+		
+			// Create objects to get the files and copy them
+            var objFSO=WScript.CreateObject("Scripting.FileSystemObject");
+            var objFolder = objFSO.GetFolder(input);
+            var colFiles = objFolder.Files;
+			
+            // For each file in the In folder
+            for(var objEnum = new Enumerator(colFiles); !objEnum.atEnd(); objEnum.moveNext()) 
+			{
+				sFileName = objEnum.item();
+				var rootName = objFSO.GetFileName(sFileName);
+				WSH.Echo("File '"+rootName+"' detected in top level folder.");
+                WSH.Echo("This script does not work with files in the top input folder level. Please target a folder with subfolders only.");
+				WSH.Quit(2);
+            }			
+		}
+		
+		function doMoveUp(input,output)		
+		{
+		
+			// Create objects to get the files and copy them
+            var objFSO=WScript.CreateObject("Scripting.FileSystemObject");
+            var objFolder = objFSO.GetFolder(input);
+            var colFiles = objFolder.Files;
+						
+            // Remove any trailing '\' in supplied Out path
+            output = objFSO.GetFolder(output);
+			
+			var name = ""+output
+			var index = name.lastIndexOf("\\")			
+			var newOutput = name.substring(0, index)
+			WSH.Echo("New Output path: "  + newOutput);
+			
+            // For each file in the In folder
+            for(var objEnum = new Enumerator(colFiles); !objEnum.atEnd(); objEnum.moveNext()) 
+			{				
+                sFileName = objEnum.item();
+                sOutName = newOutput +"\\";
+                var rootName = objFSO.GetFileName(sFileName);
+				sOutName = sOutName + rootName;
+                WSH.Echo(sOutName)
+                // Copy the file (overwriting any existing file)
+                objFSO.CopyFile (sFileName,sOutName,true);
+            }
+			if (FolderType=="tree")
+			{
+				for(var objEnum = new Enumerator(objFolder.Subfolders); !objEnum.atEnd(); objEnum.moveNext())
+				{				
+					sSubFolderName = objEnum.item();
+					WSH.Echo("Checking subfolder " + sSubFolderName);
+					var subrootName = objFSO.GetFileName(sSubFolderName);
+					sSubOutputName = OutFolder + "\\" + subrootName.substring(subrootName.length - InFolder.length, InFolder.length - 1)
+					if(!objFSO.FolderExists(sSubOutputName)){
+                        objFSO.CreateFolder(sSubOutputName);
+                    }
+					doMoveUp(sSubFolderName,sSubOutputName)
+				}				
+			}			
+		}
+		
+    </script>
+</job>

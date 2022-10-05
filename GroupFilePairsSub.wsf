@@ -1,0 +1,94 @@
+<job>
+    <script language="JScript">
+        // Aquaforest 2022
+        // Get in and out folders as named arguments
+        var InFolder = "";
+        var OutFolder = "";
+		var FolderType = "";
+        if(WScript.Arguments.Named.Exists("in")){
+            InFolder = WScript.Arguments.Named("in");
+        }
+        if(WScript.Arguments.Named.Exists("Out")){
+            OutFolder = WScript.Arguments.Named("Out");
+        }
+		if(WScript.Arguments.Named.Exists("type")){
+            FolderType = WScript.Arguments.Named("type");
+        }
+        // If there is an in and an out parameter
+        if(OutFolder!="" && InFolder!=""){
+            doPairing(InFolder, OutFolder)			
+            // Quit with value 0
+            WSH.Echo("Done");
+            WSH.Quit(0);
+        }
+        // Else there are one or more missing parameters
+        //so quit with error
+        else
+        {
+            WSH.Echo("Missing Named Parameter(s)");
+            WSH.Quit(1);
+        }
+		
+		function doPairing(input,output)		
+		{
+		
+			// Create objects to get the files and copy them
+            var objFSO=WScript.CreateObject("Scripting.FileSystemObject");
+            var objFolder = objFSO.GetFolder(input);
+            var colFiles = objFolder.Files;
+						
+            // Remove any trailing '\' in supplied Out path
+            output = objFSO.GetFolder(output);
+            // For each file in the In folder
+            for(var objEnum = new Enumerator(colFiles); !objEnum.atEnd(); objEnum.moveNext()) {				
+                sFileName = objEnum.item();
+                sOutName = output +"\\";
+                var rootName = objFSO.GetFileName(sFileName);
+                if(objFSO.GetExtensionName(sFileName) == "pdf")
+                {
+                    rootName = rootName.substring(0,rootName.length-4)
+                    sOutName = sOutName + rootName;
+                    if(!objFSO.FolderExists(sOutName)){
+                        objFSO.CreateFolder(sOutName);
+                    }
+                    sOutName = sOutName + "\\a" + objFSO.GetFileName(sFileName) ;
+                }
+                else if(objFSO.GetExtensionName(sFileName) == "xml")
+                {
+                    rootName = rootName.substring(0,rootName.length-4) // This assumes no _1 filename format
+                    sOutName = sOutName + rootName;
+                    if(!objFSO.FolderExists(sOutName)){
+                        objFSO.CreateFolder(sOutName);
+                    }
+
+                    sOutName = sOutName + "\\b" + objFSO.GetFileName(sFileName) ;
+                }
+                else
+                {
+                    WSH.Echo("Unrecognised file type");
+                    WSH.Echo(sFileName);
+                    WSH.Quit(2);
+                }
+                WSH.Echo(sOutName)
+                // Copy the file (overwriting any existing file)
+                objFSO.CopyFile (sFileName,sOutName,true);
+            }
+			if (FolderType=="tree")
+			{
+				for(var objEnum = new Enumerator(objFolder.Subfolders); !objEnum.atEnd(); objEnum.moveNext())
+				{				
+					sSubFolderName = objEnum.item();
+					WSH.Echo("Checking subfolder " + sSubFolderName);
+					var subrootName = objFSO.GetFileName(sSubFolderName);
+					sSubOutputName = OutFolder + "\\" + subrootName.substring(subrootName.length - InFolder.length, InFolder.length - 1)
+					WSH.Echo("Output will be " + sSubOutputName);
+					if(!objFSO.FolderExists(sSubOutputName)){
+                        objFSO.CreateFolder(sSubOutputName);
+                    }
+					doPairing(sSubFolderName,sSubOutputName)
+				}				
+			}			
+		}
+		
+    </script>
+</job>
